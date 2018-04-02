@@ -59,7 +59,7 @@ class HashTool(Frame):
         
         #Browse file to de/en-crypt
         self.lbFile1 = Label(self, text="File 1:", bg='black', fg='white')
-        self.lbFile1.grid(row=0, column=1, sticky=W)
+        self.lbFile1.grid(row=0, column=1, sticky=E)
 
         self.etFile1 = Entry(self, width=50)
         self.etFile1.grid(row=0, column=2, sticky=W+E, padx=5)
@@ -69,7 +69,7 @@ class HashTool(Frame):
 
         #Browse key file
         self.lbFile2 = Label(self, text="File 2:", bg='black', fg='white')
-        self.lbFile2.grid(row=1, column=1, sticky=W)
+        self.lbFile2.grid(row=1, column=1, sticky=E)
 
         self.etFile2 = Entry(self, width=50)
         self.etFile2.grid(row=1, column=2, sticky=W+E, padx=5)
@@ -79,13 +79,13 @@ class HashTool(Frame):
 
         #MD5 Hash
         self.lbFile1Hash = Label(self, text="File 1 MD5 Hash:", bg='black', fg='white')
-        self.lbFile1Hash.grid(row=2, column=1, sticky=W)
+        self.lbFile1Hash.grid(row=2, column=1, sticky=E)
 
         self.etFile1Hash = Entry(self, width=50)
         self.etFile1Hash.grid(row=2, column=2, sticky=W+E, padx=5)
 
         self.lbFile2Hash = Label(self, text="File 2 MD5 Hash:", bg='black', fg='white')
-        self.lbFile2Hash.grid(row=3, column=1, sticky=W)
+        self.lbFile2Hash.grid(row=3, column=1, sticky=E)
 
         self.etFile2Hash = Entry(self, width=50)
         self.etFile2Hash.grid(row=3, column=2, sticky=W+E, padx=5)
@@ -324,7 +324,7 @@ class Application(Frame):
         
         #Browse file to de/en-crypt
         self.lbFileDir = Label(self, text="File:", bg='black', fg='white')
-        self.lbFileDir.grid(row=1, column=1, sticky=W)
+        self.lbFileDir.grid(row=1, column=1, sticky=E)
 
         self.etFileDir = Entry(self, width=50)
         self.etFileDir.grid(row=1, column=2, columnspan=2, sticky=W+E, padx=5)
@@ -338,7 +338,7 @@ class Application(Frame):
 
         #Browse key file
         self.lbKey = Label(self, text="Key:", bg='black', fg='white')
-        self.lbKey.grid(row=2, column=1, sticky=W)
+        self.lbKey.grid(row=2, column=1, sticky=E)
 
         self.etKey = Entry(self, width=50)
         self.etKey.grid(row=2, column=2, columnspan=2, sticky=W+E, padx=5)
@@ -349,7 +349,7 @@ class Application(Frame):
 
         #Algorithm
         self.lbAlgorithm = Label(self, text="Algorithm:", bg='black', fg='white')
-        self.lbAlgorithm.grid(row=3, column=1, sticky=W)
+        self.lbAlgorithm.grid(row=3, column=1, sticky=E)
 
         self.cbAlgorithm = ttk.Combobox(self, state="readonly", width=25)
         algorithm = ("AES", "DES", "RSA")
@@ -359,7 +359,7 @@ class Application(Frame):
 
         #Encrypt/Decrypt
         self.lbEnDeCrypt = Label(self, text="Encrypt/Decrypt:", bg='black', fg='white')
-        self.lbEnDeCrypt.grid(row=4, column=1, sticky=W)
+        self.lbEnDeCrypt.grid(row=4, column=1, sticky=E)
 
         self.cbEnDeCrypt = ttk.Combobox(self, state="readonly", width=25)
         enDeCrypt = ("Encrypt", "Decrypt")
@@ -373,7 +373,7 @@ class Application(Frame):
 
         #Progress bar
         self.lbProgress = Label(self, text="Progress:", bg='black', fg='white')
-        self.lbProgress.grid(row=5, column=1, sticky=W)
+        self.lbProgress.grid(row=5, column=1, sticky=E)
 
         self.progress = ttk.Progressbar(self, orient="horizontal", length=100, mode="determinate")
         self.progress.grid(row=5, column=2, sticky=W+E, padx=5, pady=5)
@@ -429,5 +429,3 @@ root.mainloop()
 
 #Quit app and destroy root
 root.destroy()
-
-
