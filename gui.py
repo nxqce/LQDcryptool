@@ -11,7 +11,7 @@ import time
 import threading
 
 class HashTool(Frame):
-    def browse(self, et):
+    def fileBrowse(self, et):
         # print ("Browse window")
         file_path = tkFileDialog.askopenfilename()
         # print (file_path)
@@ -64,7 +64,7 @@ class HashTool(Frame):
         self.etFile1 = Entry(self, width=50)
         self.etFile1.grid(row=0, column=2, sticky=W+E, padx=5)
 
-        self.btFile1 = Button(self, text="Browse..", width=10, command=lambda: self.browse("file1"))
+        self.btFile1 = Button(self, text="Browse..", width=10, command=lambda: self.fileBrowse("file1"))
         self.btFile1.grid(row=0, column=3)
 
         #Browse key file
@@ -74,7 +74,7 @@ class HashTool(Frame):
         self.etFile2 = Entry(self, width=50)
         self.etFile2.grid(row=1, column=2, sticky=W+E, padx=5)
 
-        self.btFile2 = Button(self, text="Browse..", width=10, command=lambda: self.browse("file2"))
+        self.btFile2 = Button(self, text="Browse..", width=10, command=lambda: self.fileBrowse("file2"))
         self.btFile2.grid(row=1, column=3)
 
         #MD5 Hash
@@ -106,27 +106,42 @@ class HashTool(Frame):
         self.createWidgets()
 
 class Application(Frame):
-    def browse(self, et):
+    def fileBrowse(self, et):
         # print ("Browse window")
         self.progress["value"] = 0
         self.lbStatus.config(text="Idle")
         file_path = tkFileDialog.askopenfilename()
         # print (file_path)
         if (et == "file"):
-            self.etFile.delete(0, END)
-            self.etFile.insert(0, file_path)
+            self.etFileDir.delete(0, END)
+            self.etFileDir.insert(0, file_path)
         elif (et == "key"):
             self.etKey.delete(0, END)
             self.etKey.insert(0, file_path)
 
+    def dirBrowse(self):
+        self.progress["value"] = 0
+        self.lbStatus.config(text="Idle")
+        
+        dirPath = tkFileDialog.askdirectory()
+
+        self.etFileDir.delete(0, END)
+        self.etFileDir.insert(0, dirPath)
+
     def start(self):
+        self.timeExecute = 0
+        self.bytes = 0
+        self.maxbytes = 100
+        t = threading.Thread(target=self.timer, args=())
+        t.start()
+
         with open(self.etKey.get(),'rb') as keyFile:
             key = keyFile.read()
        
         print (key)
 
         print("Opening file")
-        fileName = self.etFile.get()
+        fileName = self.etFileDir.get()
         self.lbStatus.config(text="Opening files...")
         with open(fileName, 'rb') as fileIn:
             l = len(fileIn.read())
@@ -144,7 +159,7 @@ class Application(Frame):
         if self.cbEnDeCrypt.current() == 0:
             self.lbStatus.config(text="Encrypting...")
             if self.cbAlgorithm.current() == 0:
-                self.interval = 17000000
+                self.interval = 10000000
                 c = threading.Thread(target=cryptf.AES_encrypt_file, args=(key, fileName))
             elif self.cbAlgorithm.current() == 1:
                 self.interval = 200000
@@ -183,9 +198,29 @@ class Application(Frame):
         if (self.bytes < self.maxbytes):
             self.after(100, self.read_bytes)
 
+    def timer(self):
+        self.timeExecute += 1
+        minute = self.timeExecute / 60
+        second = self.timeExecute % 60
+        timeDisplay = str(minute / 10) + str(minute % 10) + ":" + str(second / 10) + str(second % 10)
+        self.lbTime.config(text="Time: " + timeDisplay)
+        if (self.bytes < self.maxbytes):
+            self.after(1000, self.timer)
+
     def startThread(self):
         t = threading.Thread(target=self.start, args=())
         t.start()
+
+    def selFileDir(self):
+        selection = self.intVarFileDir.get()
+        if (selection == 0):
+            self.lbFileDir.config(text="File:")
+            self.btDir.grid_forget()
+            self.btFile.grid(row=1, column=4)
+        elif (selection == 1):
+            self.lbFileDir.config(text="Folder:")
+            self.btFile.grid_forget()
+            self.btDir.grid(row=1, column=4)
 
     # def hashTool(self):
     #     self.root = Tk()
@@ -205,70 +240,88 @@ class Application(Frame):
         self.imgFile= Image.open('bg.gif')
         self.imgBackground = ImageTk.PhotoImage(self.imgFile)
         self.lbBackground = Label(self, image=self.imgBackground)
-        self.lbBackground.grid(row=0, rowspan=5, column=0, columnspan=5)
+        self.lbBackground.grid(row=0, rowspan=6, column=0, columnspan=5)
 
         #Quit
         self.QUIT = Button(self, text="Quit", command=self.quit)
-        self.QUIT.grid(row=2, rowspan=2, column=4)
+        self.QUIT.grid(row=3, rowspan=2, column=4)
+
+        #File or directory
+        self.intVarFileDir = IntVar()
+        self.intVarFileDir.set(0)
+        self.rbtFile = Radiobutton(self, text="File", variable=self.intVarFileDir, value=0, bg='black', fg='white', selectcolor='black', command=lambda: self.selFileDir())
+        self.rbtFile.select()
+        self.rbtFile.grid(row=0, column=2)
+        self.rbtDir = Radiobutton(self, text="Folder", variable=self.intVarFileDir, value=1, bg='black', fg='white', selectcolor='black', command=lambda: self.selFileDir())
+        self.rbtDir.grid(row=0, column=3)
         
         #Browse file to de/en-crypt
-        self.lbFile = Label(self, text="File:", bg='black', fg='white')
-        self.lbFile.grid(row=0, column=1, sticky=W)
+        self.lbFileDir = Label(self, text="File:", bg='black', fg='white')
+        self.lbFileDir.grid(row=1, column=1, sticky=W)
 
-        self.etFile = Entry(self, width=50)
-        self.etFile.grid(row=0, column=2, columnspan=2, sticky=W+E, padx=5)
+        self.etFileDir = Entry(self, width=50)
+        self.etFileDir.grid(row=1, column=2, columnspan=2, sticky=W+E, padx=5)
 
-        self.btFile = Button(self, text="Browse..", width=10, command=lambda: self.browse("file"))
-        self.btFile.grid(row=0, column=4)
+        self.btFile = Button(self, text="Browse..", width=10, command=lambda: self.fileBrowse("file"))
+        self.btFile.grid(row=1, column=4)
+
+        #Browse directory to de/en-crypt
+        self.btDir = Button(self, text="Browse..", width=10, command=lambda: self.dirBrowse())
+        # self.btDir.grid(row=1, column=4)
 
         #Browse key file
         self.lbKey = Label(self, text="Key:", bg='black', fg='white')
-        self.lbKey.grid(row=1, column=1, sticky=W)
+        self.lbKey.grid(row=2, column=1, sticky=W)
 
         self.etKey = Entry(self, width=50)
-        self.etKey.grid(row=1, column=2, columnspan=2, sticky=W+E, padx=5)
+        self.etKey.grid(row=2, column=2, columnspan=2, sticky=W+E, padx=5)
 
-        self.btKey = Button(self, text="Browse..", width=10, command=lambda: self.browse("key"))
-        self.btKey.grid(row=1, column=4)
+        self.btKey = Button(self, text="Browse..", width=10, command=lambda: self.fileBrowse("key"))
+        self.btKey.grid(row=2, column=4)
+        
 
         #Algorithm
         self.lbAlgorithm = Label(self, text="Algorithm:", bg='black', fg='white')
-        self.lbAlgorithm.grid(row=2, column=1, sticky=W)
+        self.lbAlgorithm.grid(row=3, column=1, sticky=W)
 
         self.cbAlgorithm = ttk.Combobox(self, state="readonly", width=25)
         algorithm = ("AES", "DES", "RSA")
         self.cbAlgorithm["value"] = algorithm
         self.cbAlgorithm.set("AES")
-        self.cbAlgorithm.grid(row=2, column=2, sticky=W, padx=5, pady=5)
+        self.cbAlgorithm.grid(row=3, column=2, sticky=W, padx=5, pady=5)
 
         #Encrypt/Decrypt
         self.lbEnDeCrypt = Label(self, text="Encrypt/Decrypt:", bg='black', fg='white')
-        self.lbEnDeCrypt.grid(row=3, column=1, sticky=W)
+        self.lbEnDeCrypt.grid(row=4, column=1, sticky=W)
 
         self.cbEnDeCrypt = ttk.Combobox(self, state="readonly", width=25)
         enDeCrypt = ("Encrypt", "Decrypt")
         self.cbEnDeCrypt["value"] = enDeCrypt
         self.cbEnDeCrypt.set("Encrypt")
-        self.cbEnDeCrypt.grid(row=3, column=2, sticky=W, padx=5, pady=5)
+        self.cbEnDeCrypt.grid(row=4, column=2, sticky=W, padx=5, pady=5)
 
         #Start button
         self.btStart = Button(self, text="Start", width=10, command= lambda: self.startThread())
-        self.btStart.grid(row=2, rowspan=2, column=3, sticky=W)
+        self.btStart.grid(row=3, rowspan=2, column=3, sticky=W)
 
         #Progress bar
         self.lbProgress = Label(self, text="Progress:", bg='black', fg='white')
-        self.lbProgress.grid(row=4, column=1, sticky=W)
+        self.lbProgress.grid(row=5, column=1, sticky=W)
 
         self.progress = ttk.Progressbar(self, orient="horizontal", length=100, mode="determinate")
-        self.progress.grid(row=4, column=2, columnspan=2, sticky=W+E, padx=5, pady=5)
+        self.progress.grid(row=5, column=2, sticky=W+E, padx=5, pady=5)
 
         self.strVarStatus = StringVar()
         self.lbStatus = Label(self, text="Idle", bg='black', fg='white')
-        self.lbStatus.grid(row=4, column=4, sticky=W)
+        self.lbStatus.grid(row=5, column=3, sticky=W)
+
+        self.strVarTime = StringVar()
+        self.lbTime = Label(self, text="Time: 00:00", bg='black', fg='white')
+        self.lbTime.grid(row=5, column=4, sticky=W)
 
         #Hash tool
         # self.bthHashTool = Button(self, text="Hash Tool", width=10, command=lambda: self.hashTool())
-        # self.bthHashTool.grid(row=2, rowspan=2, column=4)
+        # self.bthHashTool.grid(row=3, rowspan=2, column=4)
 
 
 
