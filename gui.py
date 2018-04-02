@@ -31,6 +31,9 @@ class HashTool(Frame):
 
 
     def md5Hash(self):
+        self.etFile1Hash.delete(0, END)
+        self.etFile2Hash.delete(0, END)
+
         hash1 = cryptf.MD5_hash(self.etFile1.get())
         hash2 = cryptf.MD5_hash(self.etFile2.get())
 
