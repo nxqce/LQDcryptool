@@ -128,7 +128,7 @@ class Application(Frame):
         self.etFileDir.delete(0, END)
         self.etFileDir.insert(0, dirPath)
 
-    def start(self):
+    def fileStart(self):
         self.timeExecute = 0
         self.bytes = 0
         self.maxbytes = 100
@@ -191,6 +191,70 @@ class Application(Frame):
             self.lbStatus.config(text="Encrypted!")
         print("Completed")
 
+    def dirStart(self):
+        self.timeExecute = 0
+        self.progress["value"] = 0
+        self.bytes = 0
+        self.maxbytes = 100
+        t = threading.Thread(target=self.timer, args=())
+        t.start()
+
+        with open(self.etKey.get(),'rb') as keyFile:
+            key = keyFile.read()
+       
+        print (key)
+
+        print("Scanning files...")
+        dirName = self.etFileDir.get()
+        files = []
+        self.lbStatus.config(text="Scanning files...")
+        files = [dirName + '/' + f for f in os.listdir(dirName) if not os.path.isdir(dirName + '/' + f)]
+        
+        self.bytes = 0
+        self.interval = 1
+        self.maxbytes = len(files)
+        self.progress["maximum"] = self.maxbytes
+        
+        print("En/De-crypting")
+        # p = threading.Thread(target=self.read_bytes, args=())
+        # p.start()
+        for fileName in files:
+            if self.cbEnDeCrypt.current() == 0:
+                self.lbStatus.config(text="Encrypting... " + str(self.progress['value']) + '/' + str(self.progress['maximum']))
+                if self.cbAlgorithm.current() == 0:
+                    # self.interval = 10000000
+                    c = threading.Thread(target=cryptf.AES_encrypt_file, args=(key, fileName))
+                elif self.cbAlgorithm.current() == 1:
+                    # self.interval = 200000
+                    c = threading.Thread(target=cryptf.DES3_encrypt_file, args=(key, fileName))
+                else:
+                    # self.interval = 7800
+                    c = threading.Thread(target= cryptf.encrypt_blob, args=(key, fileName))
+                c.start()
+            else:
+                self.lbStatus.config(text="Decrypting... " + str(self.progress['value']) + '/' + str(self.progress['maximum']))
+                newFileName = fileName.split('.')[0] + "_decrypted." + fileName.split('.')[1]
+                if self.cbAlgorithm.current() == 0:
+                    # self.interval = 15000000
+                    c = threading.Thread(target=cryptf.AES_decrypt_file, args=(key, fileName, newFileName))
+                elif self.cbAlgorithm.current() == 1:
+                    # self.interval = 100000
+                    c = threading.Thread(target=cryptf.DES3_decrypt_file, args=(key, fileName, newFileName))
+                else:
+                    # self.interval = 300
+                    c = threading.Thread(target=cryptf.decrypt_blob, args=(key, fileName, newFileName))
+                c.start()
+            c.join()
+            self.progress["value"] += 1
+        
+        self.bytes = self.maxbytes
+        self.progress["value"] = self.progress["maximum"]
+        if self.cbEnDeCrypt.current():
+            self.lbStatus.config(text="Decrypted!")
+        else:
+            self.lbStatus.config(text="Encrypted!")
+        print("Completed")
+
     def read_bytes(self):
         # print(".")
         self.bytes += self.interval
@@ -208,7 +272,10 @@ class Application(Frame):
             self.after(1000, self.timer)
 
     def startThread(self):
-        t = threading.Thread(target=self.start, args=())
+        if (self.intVarFileDir.get() == 0):
+            t = threading.Thread(target=self.fileStart, args=())
+        elif (self.intVarFileDir.get() == 1):
+            t = threading.Thread(target=self.dirStart, args=())
         t.start()
 
     def selFileDir(self):
