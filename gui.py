@@ -10,6 +10,19 @@ import  cryptf
 import time
 import threading
 
+from Scripts_store import Ask_Mode as ask, ServerMode as server, ClientMode as client
+
+# class testApp(ttk.Frame):
+def startApp():
+    storeobj = ask.Ask_Mode_Option()
+    if storeobj == 0:
+        client.ClientMode(className='Python Chatting [Client Mode]').mainloop()
+    elif storeobj == 1:
+        server.ServerMode(className='Python Chatting [Server Mode]').mainloop()
+        pass
+    else:
+        pass
+
 class HashTool(Frame):
     def fileBrowse(self, et):
         # print ("Browse window")
@@ -446,10 +459,20 @@ root.resizable(width=False, height=False)
 note = ttk.Notebook(root)
 appTab = Application(note)
 hashTab = HashTool(note)
+chatTab = Frame(note)
 
 #Add tab
 note.add(appTab, text='En/De-crypt')
 note.add(hashTab, text='MD5 Hash')
+note.add(chatTab, text='Chat tool')
+
+#Chat tab widget
+imageFile = Image.open("bg.gif")
+imageBg = ImageTk.PhotoImage(imageFile)
+lbBg = Label(chatTab, image=imageBg)
+lbBg.grid(row=0, column=0)
+btStartChatApp = Button(chatTab, text='Start Chat App', command=lambda: startApp())
+btStartChatApp.grid(row=0, column=0)
 
 #Run app and keep app alive
 root.mainloop()
