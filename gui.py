@@ -113,23 +113,33 @@ class Application(Frame):
         # print ("Browse window")
         self.progress["value"] = 0
         self.lbStatus.config(text="Idle")
-        file_path = tkFileDialog.askopenfilename()
-        # print (file_path)
+        filePath = tkFileDialog.askopenfilename()
+        dirPath = os.path.split(filePath)[0]
         if (et == "file"):
             self.etFileDir.delete(0, END)
-            self.etFileDir.insert(0, file_path)
+            self.etFileDir.insert(0, filePath)
+
+            self.etSaveDir.delete(0, END)
+            self.etSaveDir.insert(0, dirPath)
         elif (et == "key"):
             self.etKey.delete(0, END)
-            self.etKey.insert(0, file_path)
+            self.etKey.insert(0, filePath)
 
-    def dirBrowse(self):
+    def dirBrowse(self, et):
         self.progress["value"] = 0
         self.lbStatus.config(text="Idle")
         
         dirPath = tkFileDialog.askdirectory()
 
-        self.etFileDir.delete(0, END)
-        self.etFileDir.insert(0, dirPath)
+        if (et == "dir"):
+            self.etFileDir.delete(0, END)
+            self.etFileDir.insert(0, dirPath)
+
+            self.etSaveDir.delete(0, END)
+            self.etSaveDir.insert(0, dirPath)
+        elif (et == "save"):
+            self.etSaveDir.delete(0, END)
+            self.etSaveDir.insert(0, dirPath)
 
     def fileStart(self):
         self.timeExecute = 0
@@ -149,6 +159,8 @@ class Application(Frame):
         with open(fileName, 'rb') as fileIn:
             l = len(fileIn.read())
         print(l)
+
+        saveDir = self.etSaveDir.get()
         
         self.progress["value"] = 0
         self.bytes = 0
@@ -161,19 +173,21 @@ class Application(Frame):
         p.start()
         if self.cbEnDeCrypt.current() == 0:
             self.lbStatus.config(text="Encrypting...")
+            newFileName = saveDir + '/' + os.path.split(fileName)[1] + '.ldq'
             if self.cbAlgorithm.current() == 0:
                 self.interval = 10000000
-                c = threading.Thread(target=cryptf.AES_encrypt_file, args=(key, fileName))
+                c = threading.Thread(target=cryptf.AES_encrypt_file, args=(key, fileName, newFileName))
             elif self.cbAlgorithm.current() == 1:
                 self.interval = 200000
-                c = threading.Thread(target=cryptf.DES3_encrypt_file, args=(key, fileName))
+                c = threading.Thread(target=cryptf.DES3_encrypt_file, args=(key, fileName, newFileName))
             else:
                 self.interval = 7800
-                c = threading.Thread(target= cryptf.encrypt_blob, args=(key, fileName))
+                c = threading.Thread(target= cryptf.encrypt_blob, args=(key, fileName, newFileName))
             c.start()
         else:
             self.lbStatus.config(text="Decrypting...")
-            newFileName = fileName.split('.')[0] + "_decrypted." + fileName.split('.')[1]
+            #newFileName = fileName.split('.')[0] + "_decrypted." + fileName.split('.')[1]
+            newFileName = saveDir + '/' + os.path.split(fileName)[1].split('.')[0] + fileName.split('.')[1]
             if self.cbAlgorithm.current() == 0:
                 self.interval = 15000000
                 c = threading.Thread(target=cryptf.AES_decrypt_file, args=(key, fileName, newFileName))
@@ -310,11 +324,11 @@ class Application(Frame):
         self.imgFile= Image.open('bg.gif')
         self.imgBackground = ImageTk.PhotoImage(self.imgFile)
         self.lbBackground = Label(self, image=self.imgBackground)
-        self.lbBackground.grid(row=0, rowspan=6, column=0, columnspan=5)
+        self.lbBackground.grid(row=0, rowspan=7, column=0, columnspan=5)
 
         #Quit
         self.QUIT = Button(self, text="Quit", command=self.quit)
-        self.QUIT.grid(row=3, rowspan=2, column=4)
+        self.QUIT.grid(row=4, rowspan=2, column=4)
 
         #File or directory
         self.intVarFileDir = IntVar()
@@ -336,58 +350,68 @@ class Application(Frame):
         self.btFile.grid(row=1, column=4)
 
         #Browse directory to de/en-crypt
-        self.btDir = Button(self, text="Browse..", width=10, command=lambda: self.dirBrowse())
+        self.btDir = Button(self, text="Browse..", width=10, command=lambda: self.dirBrowse("dir"))
         # self.btDir.grid(row=1, column=4)
+
+        #Save to directory
+        self.lbSaveDir = Label(self, text="Save to folder:", bg='black', fg='white')
+        self.lbSaveDir.grid(row=2, column=1, sticky=E)
+
+        self.etSaveDir = Entry(self, width=50)
+        self.etSaveDir.grid(row=2, column=2, columnspan=2, sticky=W+E, padx=5)
+
+        self.btSaveDir = Button(self, text="Browse..", width=10, command=lambda: self.dirBrowse("save"))
+        self.btSaveDir.grid(row=2, column=4)
 
         #Browse key file
         self.lbKey = Label(self, text="Key:", bg='black', fg='white')
-        self.lbKey.grid(row=2, column=1, sticky=E)
+        self.lbKey.grid(row=3, column=1, sticky=E)
 
         self.etKey = Entry(self, width=50)
-        self.etKey.grid(row=2, column=2, columnspan=2, sticky=W+E, padx=5)
+        self.etKey.grid(row=3, column=2, columnspan=2, sticky=W+E, padx=5)
 
         self.btKey = Button(self, text="Browse..", width=10, command=lambda: self.fileBrowse("key"))
-        self.btKey.grid(row=2, column=4)
+        self.btKey.grid(row=3, column=4)
         
 
         #Algorithm
         self.lbAlgorithm = Label(self, text="Algorithm:", bg='black', fg='white')
-        self.lbAlgorithm.grid(row=3, column=1, sticky=E)
+        self.lbAlgorithm.grid(row=4, column=1, sticky=E)
 
         self.cbAlgorithm = ttk.Combobox(self, state="readonly", width=25)
         algorithm = ("AES", "DES", "RSA")
         self.cbAlgorithm["value"] = algorithm
         self.cbAlgorithm.set("AES")
-        self.cbAlgorithm.grid(row=3, column=2, sticky=W, padx=5, pady=5)
+        self.cbAlgorithm.grid(row=4, column=2, sticky=W, padx=5, pady=5)
 
         #Encrypt/Decrypt
         self.lbEnDeCrypt = Label(self, text="Encrypt/Decrypt:", bg='black', fg='white')
-        self.lbEnDeCrypt.grid(row=4, column=1, sticky=E)
+        self.lbEnDeCrypt.grid(row=5, column=1, sticky=E)
 
         self.cbEnDeCrypt = ttk.Combobox(self, state="readonly", width=25)
         enDeCrypt = ("Encrypt", "Decrypt")
         self.cbEnDeCrypt["value"] = enDeCrypt
         self.cbEnDeCrypt.set("Encrypt")
-        self.cbEnDeCrypt.grid(row=4, column=2, sticky=W, padx=5, pady=5)
+        self.cbEnDeCrypt.grid(row=5, column=2, sticky=W, padx=5, pady=5)
 
         #Start button
         self.btStart = Button(self, text="Start", width=10, command= lambda: self.startThread())
-        self.btStart.grid(row=3, rowspan=2, column=3, sticky=W)
+        self.btStart.grid(row=4, rowspan=2, column=3, sticky=W)
 
         #Progress bar
         self.lbProgress = Label(self, text="Progress:", bg='black', fg='white')
-        self.lbProgress.grid(row=5, column=1, sticky=E)
+        self.lbProgress.grid(row=6, column=1, sticky=E)
 
         self.progress = ttk.Progressbar(self, orient="horizontal", length=100, mode="determinate")
-        self.progress.grid(row=5, column=2, sticky=W+E, padx=5, pady=5)
+        self.progress.grid(row=6, column=2, sticky=W+E, padx=5, pady=5)
 
         self.strVarStatus = StringVar()
         self.lbStatus = Label(self, text="Idle", bg='black', fg='white')
-        self.lbStatus.grid(row=5, column=3, sticky=W)
+        self.lbStatus.grid(row=6, column=3, sticky=W)
 
         self.strVarTime = StringVar()
         self.lbTime = Label(self, text="Time: 00:00", bg='black', fg='white')
-        self.lbTime.grid(row=5, column=4, sticky=W)
+        self.lbTime.grid(row=6, column=4, sticky=W)
 
         #Hash tool
         # self.bthHashTool = Button(self, text="Hash Tool", width=10, command=lambda: self.hashTool())
