@@ -163,7 +163,14 @@ class Application(Frame):
 
         with open(self.etKey.get(),'rb') as keyFile:
             key = keyFile.read()
-       
+        
+        if self.cbAlgorithm.current() == 0 and len(key) != 16 and len(key) != 24 and len(key) != 32:
+		    print 'sai key 0'
+		    tkMessageBox.showerror('Error', 'The key for this algorithm is 16 or 24 or 32 bytes long')
+	    elif self.cbAlgorithm.current() == 2 and len(key) != 16 and len(key) != 24 and len(key) != 32:
+		    print 'sai key 2'   
+		    tkMessageBox.showerror('Error', 'The key for this algorithm is 16 or 24 or 32 bytes long')   
+        
         print (key)
 
         print("Opening file")
@@ -231,7 +238,14 @@ class Application(Frame):
 
         with open(self.etKey.get(),'rb') as keyFile:
             key = keyFile.read()
-       
+        
+        if self.cbAlgorithm.current() == 0 and len(key) != 16 and len(key) != 24 and len(key) != 32:
+		    print 'sai key 0'
+		    tkMessageBox.showerror('Error', 'The key for this algorithm is 16 or 24 or 32 bytes long')
+	    elif self.cbAlgorithm.current() == 2 and len(key) != 16 and len(key) != 24 and len(key) != 32:
+		    print 'sai key 2'   
+		    tkMessageBox.showerror('Error', 'The key for this algorithm is 16 or 24 or 32 bytes long')   
+        
         print (key)
 
         print("Scanning files...")
