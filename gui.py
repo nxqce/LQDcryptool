@@ -6,7 +6,7 @@ import tkMessageBox
 from PIL import Image, ImageTk
 from mttkinter import *
 
-import  cryptf
+import  cryptf, cryptt
 
 import time
 import threading
@@ -464,6 +464,248 @@ class Application(Frame):
         self.bytes = 0
         self.maxbytes = 0
 
+class TextMode(Frame):
+    def fileBrowse(self, et):
+        # print ("Browse window")
+        self.progress["value"] = 0
+        self.lbStatus.config(text="Idle")
+        filePath = tkFileDialog.askopenfilename()
+        # dirPath = os.path.split(filePath)[0]
+    
+        self.etFileDir.delete(0, END)
+        self.etFileDir.insert(0, filePath)
+
+        fileName = self.etFileDir.get()
+        with open(fileName, 'r') as fileIn:
+            text = fileIn.read()
+
+        self.txIn.config(text=text)
+
+    # def dirBrowse(self, et):
+    #     self.progress["value"] = 0
+    #     self.lbStatus.config(text="Idle")
+        
+    #     dirPath = tkFileDialog.askdirectory()
+
+    #     if (et == "dir"):
+    #         self.etFileDir.delete(0, END)
+    #         self.etFileDir.insert(0, dirPath)
+
+    #         self.etSaveDir.delete(0, END)
+    #         self.etSaveDir.insert(0, dirPath)
+    #     elif (et == "save"):
+    #         self.etSaveDir.delete(0, END)
+    #         self.etSaveDir.insert(0, dirPath)
+
+    def fileStart(self):        
+        self.timeExecute = 0
+        self.bytes = 0
+        self.maxbytes = 100
+        t = threading.Thread(target=self.timer, args=())
+        t.start()
+
+        # with open(self.etKey.get(),'rb') as keyFile:
+        #     key = keyFile.read()
+        key = self.etKey.get()
+       
+        if self.cbAlgorithm.current() == 0 and len(key) != 16 and len(key) != 24 and len(key) != 32:
+            print 'sai key 0'
+            # time.sleep(2)
+            tkMessageBox.showerror('Error', 'The key for this algorithm is')
+
+            return
+        elif self.cbAlgorithm.current() == 2 and len(key) != 16 and len(key) != 24 and len(key) != 32:
+            print 'sai key 2'   
+            tkMessageBox.showerror(title='Error', message='The key for this algorithm is 16 or 24 or 32 bytes long')
+            return
+
+        print (key)
+
+        fileName = self.etFileDir.get()
+        with open(fileName, 'rb') as fileIn:
+            mess = fileIn.read()
+        l = len(mess)
+        print(l)
+
+        # saveDir = self.etSaveDir.get()
+        
+        self.progress["value"] = 0
+        self.bytes = 0
+        self.interval = 100
+        self.maxbytes = l
+        self.progress["maximum"] = self.maxbytes
+        
+        print("En/De-crypting")
+        p = threading.Thread(target=self.read_bytes, args=())
+        p.start()
+        if self.cbEnDeCrypt.current() == 0:
+            self.lbStatus.config(text="Encrypting...")
+            # newFileName = saveDir + '/' + os.path.split(fileName)[1] + '.ldq'
+            if self.cbAlgorithm.current() == 0:
+                self.interval = 10000000
+                c = threading.Thread(target=cryptt.AESencrypt, args=(mess, key))
+            elif self.cbAlgorithm.current() == 1:
+                self.interval = 200000
+                c = threading.Thread(target=cryptt.DESencrypt, args=(key, mess))
+            else:
+                self.interval = 7800
+                c = threading.Thread(target= cryptf.encrypt_blob, args=(key, fileName, newFileName))
+            c.start()
+        else:
+            self.lbStatus.config(text="Decrypting...")
+            #newFileName = fileName.split('.')[0] + "_decrypted." + fileName.split('.')[1]
+            # newFileName = saveDir + '/' + os.path.split(fileName)[1].split('.')[0] + fileName.split('.')[1]
+            if self.cbAlgorithm.current() == 0:
+                self.interval = 15000000
+                c = threading.Thread(target=cryptf.AES_decrypt_file, args=(key, fileName, newFileName))
+            elif self.cbAlgorithm.current() == 1:
+                self.interval = 100000
+                c = threading.Thread(target=cryptf.DES3_decrypt_file, args=(key, fileName, newFileName))
+            else:
+                self.interval = 300
+                c = threading.Thread(target=cryptf.decrypt_blob, args=(key, fileName, newFileName))
+            c.start()
+        
+        c.join()
+        self.bytes = self.maxbytes
+        self.progress["value"] = self.progress["maximum"]
+        if self.cbEnDeCrypt.current():
+            self.lbStatus.config(text="Decrypted!")
+        else:
+            self.lbStatus.config(text="Encrypted!")
+        print("Completed")
+
+    def read_bytes(self):
+        # print(".")
+        self.bytes += self.interval
+        self.progress["value"] = self.bytes
+        if (self.bytes < self.maxbytes):
+            self.after(100, self.read_bytes)
+
+    def timer(self):
+        self.timeExecute += 1
+        minute = self.timeExecute / 60
+        second = self.timeExecute % 60
+        timeDisplay = str(minute / 10) + str(minute % 10) + ":" + str(second / 10) + str(second % 10)
+        self.lbTime.config(text="Time: " + timeDisplay)
+        if (self.bytes < self.maxbytes):
+            self.after(1000, self.timer)
+
+    def startThread(self):
+        t = threading.Thread(target=self.fileStart, args=())
+        t.start()
+
+    def createWidgets(self):
+        #Photo background
+        self.panel = Label(self,bg='black')
+        self.panel.grid(row=0, rowspan=7, column=0, padx=50)
+        self.imgFile= Image.open('bg.gif')
+        self.imgBackground = ImageTk.PhotoImage(self.imgFile)
+        self.lbBackground = Label(self, image=self.imgBackground)
+        self.lbBackground.grid(row=0, rowspan=6, column=0, columnspan=6)
+
+        #Quit
+        self.QUIT = Button(self, text="Quit", command=self.quit)
+        self.QUIT.grid(row=5, column=5)
+
+        #Browse file to de/en-crypt
+        self.lbFileDir = Label(self, text="File:", bg='black', fg='white')
+        self.lbFileDir.grid(row=0, column=1, sticky=E)
+
+        self.etFileDir = Entry(self, width=40)
+        self.etFileDir.grid(row=0, column=2, columnspan=3, sticky=W+E, padx=5)
+
+        self.btFile = Button(self, text="Browse..", width=10, command=lambda: self.fileBrowse("file"))
+        self.btFile.grid(row=0, column=5, pady=5)
+
+        #Save to directory
+        # self.lbSaveDir = Label(self, text="Save to folder:", bg='black', fg='white')
+        # self.lbSaveDir.grid(row=2, column=1, sticky=E)
+
+        # self.etSaveDir = Entry(self, width=50)
+        # self.etSaveDir.grid(row=2, column=2, columnspan=2, sticky=W+E, padx=5)
+
+        # self.btSaveDir = Button(self, text="Browse..", width=10, command=lambda: self.dirBrowse("save"))
+        # self.btSaveDir.grid(row=2, column=4)
+
+        #File content
+        self.lbIn = Label(self, text="Text:", bg='black', fg='white')
+        self.lbIn.grid(row=1, column=1, sticky=E)
+        self.txIn = Text(self, height=5, width=75)
+        self.txIn.grid(row=1, column=2, columnspan=4, padx=5)
+
+        #Browse key file
+        self.lbKey = Label(self, text="Key:", bg='black', fg='white')
+        self.lbKey.grid(row=2, column=1, sticky=E)
+
+        self.etKey = Entry(self)
+        self.etKey.grid(row=2, column=2, columnspan=4, sticky=W+E, padx=5)
+
+        # self.btKey = Button(self, text="Browse..", width=10, command=lambda: self.fileBrowse("key"))
+        # self.btKey.grid(row=2, column=5)
+        
+
+        #Algorithm
+        self.lbAlgorithm = Label(self, text="Algorithm:", bg='black', fg='white')
+        self.lbAlgorithm.grid(row=3, column=1, sticky=E)
+
+        self.cbAlgorithm = ttk.Combobox(self, state="readonly", width=15)
+        algorithm = ("AES", "DES", "Ceasar", "Transposition")
+        self.cbAlgorithm["value"] = algorithm
+        self.cbAlgorithm.set("AES")
+        self.cbAlgorithm.grid(row=3, column=2, sticky=W, padx=5, pady=5)
+
+        #Encrypt/Decrypt
+        self.lbEnDeCrypt = Label(self, text="Encrypt/Decrypt:", bg='black', fg='white')
+        self.lbEnDeCrypt.grid(row=3, column=3, sticky=E)
+
+        self.cbEnDeCrypt = ttk.Combobox(self, state="readonly", width=15)
+        enDeCrypt = ("Encrypt", "Decrypt")
+        self.cbEnDeCrypt["value"] = enDeCrypt
+        self.cbEnDeCrypt.set("Encrypt")
+        self.cbEnDeCrypt.grid(row=3, column=4, sticky=W, padx=5, pady=5)
+
+        #Start button
+        self.btStart = Button(self, text="Start", width=10, command= lambda: self.startThread())
+        self.btStart.grid(row=3, column=5)
+
+        #Out
+        self.lbOut = Label(self, text="Text:", bg='black', fg='white')
+        self.lbOut.grid(row=4, column=1, sticky=E)
+        self.txOut = Text(self, height=5, width=75)
+        self.txOut.grid(row=4, column=2, columnspan=4, padx=5)
+
+        #Progress bar
+        self.lbProgress = Label(self, text="Progress:", bg='black', fg='white')
+        self.lbProgress.grid(row=5, column=1, sticky=E)
+
+        self.progress = ttk.Progressbar(self, orient="horizontal", length=100, mode="determinate")
+        self.progress.grid(row=5, column=2, sticky=W+E, padx=5, pady=5)
+
+        self.strVarStatus = StringVar()
+        self.lbStatus = Label(self, text="Idle", bg='black', fg='white')
+        self.lbStatus.grid(row=5, column=3, sticky=W)
+
+        self.strVarTime = StringVar()
+        self.lbTime = Label(self, text="Time: 00:00", bg='black', fg='white')
+        self.lbTime.grid(row=5, column=4, sticky=W)
+
+        #Hash tool
+        # self.bthHashTool = Button(self, text="Hash Tool", width=10, command=lambda: self.hashTool())
+        # self.bthHashTool.grid(row=3, rowspan=2, column=4)
+
+
+
+    def __init__(self, master=None):
+        Frame.__init__(self, master)
+       
+        master.pack()
+        master.winfo_toplevel().title("LDQ Cryptool")
+        self.createWidgets()
+
+        self.bytes = 0
+        self.maxbytes = 0
+
 ### Start program
 # Create the top level root
 root = Tk()
@@ -482,11 +724,13 @@ note = ttk.Notebook(root)
 appTab = Application(note)
 hashTab = HashTool(note)
 chatTab = Frame(note)
+textMode = TextMode(note)
 
 #Add tab
 note.add(appTab, text='En/De-crypt')
 note.add(hashTab, text='MD5 Hash')
 note.add(chatTab, text='Chat tool')
+note.add(textMode, text='Text en/de-crypt')
 
 #Chat tab widget
 imageFile = Image.open("bg.gif")
