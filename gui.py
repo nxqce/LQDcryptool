@@ -1,10 +1,10 @@
-
 import os
 from Tkinter import *
 import ttk
 import tkFileDialog
 import tkMessageBox
 from PIL import Image, ImageTk
+from mttkinter import *
 
 import  cryptf
 
@@ -14,12 +14,12 @@ import threading
 from Scripts_store import Ask_Mode as ask, ServerMode as server, ClientMode as client
 
 # class testApp(ttk.Frame):
-def startApp():
+def startApp(root):
     storeobj = ask.Ask_Mode_Option()
     if storeobj == 0:
-        client.ClientMode(className='Python Chatting [Client Mode]').mainloop()
+        client.ClientMode(root, className='Python Chatting [Client Mode]').mainloop()
     elif storeobj == 1:
-        server.ServerMode(className='Python Chatting [Server Mode]').mainloop()
+        server.ServerMode(root, className='Python Chatting [Server Mode]').mainloop()
         pass
     else:
         pass
@@ -155,7 +155,7 @@ class Application(Frame):
             self.etSaveDir.delete(0, END)
             self.etSaveDir.insert(0, dirPath)
 
-    def fileStart(self):
+    def fileStart(self):        
         self.timeExecute = 0
         self.bytes = 0
         self.maxbytes = 100
@@ -165,14 +165,16 @@ class Application(Frame):
         with open(self.etKey.get(),'rb') as keyFile:
             key = keyFile.read()
        
-	if self.cbAlgorithm.current() == 0 and len(key) != 16 and len(key) != 24 and len(key) != 32:
-		print 'sai key 0'
-		tkMessageBox.showerror('Error', 'The key for this algorithm is 16 or 24 or 32 bytes long')
-		return
-	elif self.cbAlgorithm.current() == 2 and len(key) != 16 and len(key) != 24 and len(key) != 32:
-		print 'sai key 2'   
-		tkMessageBox.showerror('Error', 'The key for this algorithm is 16 or 24 or 32 bytes long')
-		return
+        if self.cbAlgorithm.current() == 0 and len(key) != 16 and len(key) != 24 and len(key) != 32:
+            print 'sai key 0'
+            # time.sleep(2)
+            tkMessageBox.showerror('Error', 'The key for this algorithm is')
+
+            return
+        elif self.cbAlgorithm.current() == 2 and len(key) != 16 and len(key) != 24 and len(key) != 32:
+            print 'sai key 2'   
+            tkMessageBox.showerror(title='Error', message='The key for this algorithm is 16 or 24 or 32 bytes long')
+            return
 
         print (key)
 
@@ -242,14 +244,14 @@ class Application(Frame):
         with open(self.etKey.get(),'rb') as keyFile:
             key = keyFile.read()
 	
-	if self.cbAlgorithm.current() == 0 and len(key) != 16 and len(key) != 24 and len(key) != 32:
-		print 'sai key 0'
-		tkMessageBox.showerror('Error', 'The key for this algorithm is 16 or 24 or 32 bytes long')
-		return
-	elif self.cbAlgorithm.current() == 2 and len(key) != 16 and len(key) != 24 and len(key) != 32:
-		print 'sai key 2'   
-		tkMessageBox.showerror('Error', 'The key for this algorithm is 16 or 24 or 32 bytes long')       
-		return	
+        if self.cbAlgorithm.current() == 0 and len(key) != 16 and len(key) != 24 and len(key) != 32:
+            print 'sai key 0'
+            tkMessageBox.showerror('Error', 'The key for this algorithm is 16 or 24 or 32 bytes long')
+            return
+        elif self.cbAlgorithm.current() == 2 and len(key) != 16 and len(key) != 24 and len(key) != 32:
+            print 'sai key 2'   
+            tkMessageBox.showerror('Error', 'The key for this algorithm is 16 or 24 or 32 bytes long')       
+            return	
 
         print (key)
 
@@ -326,6 +328,7 @@ class Application(Frame):
         elif (self.intVarFileDir.get() == 1):
             t = threading.Thread(target=self.dirStart, args=())
         t.start()
+        # tkMessageBox.showerror('Error', 'The key for this algorithm is')
 
     def selFileDir(self):
         selection = self.intVarFileDir.get()
@@ -490,7 +493,7 @@ imageFile = Image.open("bg.gif")
 imageBg = ImageTk.PhotoImage(imageFile)
 lbBg = Label(chatTab, image=imageBg)
 lbBg.grid(row=0, column=0)
-btStartChatApp = Button(chatTab, text='Start Chat App', command=lambda: startApp())
+btStartChatApp = Button(chatTab, text='Start Chat App', command=lambda: startApp(root))
 btStartChatApp.grid(row=0, column=0)
 
 #Run app and keep app alive
