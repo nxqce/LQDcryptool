@@ -14,12 +14,13 @@ import threading
 from Scripts_store import Ask_Mode as ask, ServerMode as server, ClientMode as client
 
 # class testApp(ttk.Frame):
-def startApp(root):
+def startApp():
     storeobj = ask.Ask_Mode_Option()
     if storeobj == 0:
-        client.ClientMode(root, className='Python Chatting [Client Mode]').mainloop()
+        client.ClientMode(className='Python Chatting [Client Mode]').mainloop()
+        pass
     elif storeobj == 1:
-        server.ServerMode(root, className='Python Chatting [Server Mode]').mainloop()
+        server.ServerMode(className='Python Chatting [Server Mode]').mainloop()
         pass
     else:
         pass
@@ -171,7 +172,7 @@ class Application(Frame):
             tkMessageBox.showerror('Error', 'The key for this algorithm is')
 
             return
-        elif self.cbAlgorithm.current() == 2 and len(key) != 16 and len(key) != 24 and len(key) != 32:
+        elif self.cbAlgorithm.current() == 1 and len(key) != 16 and len(key) != 24 and len(key) != 32:
             print 'sai key 2'   
             tkMessageBox.showerror(title='Error', message='The key for this algorithm is 16 or 24 or 32 bytes long')
             return
@@ -212,7 +213,7 @@ class Application(Frame):
         else:
             self.lbStatus.config(text="Decrypting...")
             #newFileName = fileName.split('.')[0] + "_decrypted." + fileName.split('.')[1]
-            newFileName = saveDir + '/' + os.path.split(fileName)[1].split('.')[0] + fileName.split('.')[1]
+            newFileName = saveDir + '/' + os.path.split(fileName)[1].split('.')[0] + '_decrypted.' + fileName.split('.')[1]
             if self.cbAlgorithm.current() == 0:
                 self.interval = 15000000
                 c = threading.Thread(target=cryptf.AES_decrypt_file, args=(key, fileName, newFileName))
@@ -248,12 +249,14 @@ class Application(Frame):
             print 'sai key 0'
             tkMessageBox.showerror('Error', 'The key for this algorithm is 16 or 24 or 32 bytes long')
             return
-        elif self.cbAlgorithm.current() == 2 and len(key) != 16 and len(key) != 24 and len(key) != 32:
+        elif self.cbAlgorithm.current() == 1 and len(key) != 16 and len(key) != 24 and len(key) != 32:
             print 'sai key 2'   
             tkMessageBox.showerror('Error', 'The key for this algorithm is 16 or 24 or 32 bytes long')       
             return	
 
         print (key)
+
+        saveDir = self.etSaveDir.get()
 
         print("Scanning files...")
         dirName = self.etFileDir.get()
@@ -272,19 +275,20 @@ class Application(Frame):
         for fileName in files:
             if self.cbEnDeCrypt.current() == 0:
                 self.lbStatus.config(text="Encrypting... " + str(self.progress['value']) + '/' + str(self.progress['maximum']))
+                newFileName = saveDir + '/' + os.path.split(fileName)[1] + '.ldq'
                 if self.cbAlgorithm.current() == 0:
                     # self.interval = 10000000
-                    c = threading.Thread(target=cryptf.AES_encrypt_file, args=(key, fileName))
+                    c = threading.Thread(target=cryptf.AES_encrypt_file, args=(key, fileName, newFileName))
                 elif self.cbAlgorithm.current() == 1:
                     # self.interval = 200000
-                    c = threading.Thread(target=cryptf.DES3_encrypt_file, args=(key, fileName))
+                    c = threading.Thread(target=cryptf.DES3_encrypt_file, args=(key, fileName, newFileName))
                 else:
                     # self.interval = 7800
-                    c = threading.Thread(target= cryptf.encrypt_blob, args=(key, fileName))
+                    c = threading.Thread(target= cryptf.encrypt_blob, args=(key, fileName, newFileName))
                 c.start()
             else:
                 self.lbStatus.config(text="Decrypting... " + str(self.progress['value']) + '/' + str(self.progress['maximum']))
-                newFileName = fileName.split('.')[0] + "_decrypted." + fileName.split('.')[1]
+                newFileName = saveDir + '/' + os.path.split(fileName)[1].split('.')[0] + '_decrypted.' + fileName.split('.')[1]
                 if self.cbAlgorithm.current() == 0:
                     # self.interval = 15000000
                     c = threading.Thread(target=cryptf.AES_decrypt_file, args=(key, fileName, newFileName))
@@ -467,8 +471,8 @@ class Application(Frame):
 class TextMode(Frame):
     def fileBrowse(self, et):
         # print ("Browse window")
-        self.progress["value"] = 0
-        self.lbStatus.config(text="Idle")
+        # self.progress["value"] = 0
+        # self.lbStatus.config(text="Idle")
         filePath = tkFileDialog.askopenfilename()
         # dirPath = os.path.split(filePath)[0]
     
@@ -476,10 +480,13 @@ class TextMode(Frame):
         self.etFileDir.insert(0, filePath)
 
         fileName = self.etFileDir.get()
+        text = ''
         with open(fileName, 'r') as fileIn:
             text = fileIn.read()
 
-        self.txIn.config(text=text)
+        self.txIn.delete('1.0', END)
+        self.txIn.insert('1.0', text)
+
 
     # def dirBrowse(self, et):
     #     self.progress["value"] = 0
@@ -497,13 +504,7 @@ class TextMode(Frame):
     #         self.etSaveDir.delete(0, END)
     #         self.etSaveDir.insert(0, dirPath)
 
-    def fileStart(self):        
-        self.timeExecute = 0
-        self.bytes = 0
-        self.maxbytes = 100
-        t = threading.Thread(target=self.timer, args=())
-        t.start()
-
+    def fileStart(self):
         # with open(self.etKey.get(),'rb') as keyFile:
         #     key = keyFile.read()
         key = self.etKey.get()
@@ -514,9 +515,9 @@ class TextMode(Frame):
             tkMessageBox.showerror('Error', 'The key for this algorithm is')
 
             return
-        elif self.cbAlgorithm.current() == 2 and len(key) != 16 and len(key) != 24 and len(key) != 32:
+        elif self.cbAlgorithm.current() == 1 and len(key) != 8:
             print 'sai key 2'   
-            tkMessageBox.showerror(title='Error', message='The key for this algorithm is 16 or 24 or 32 bytes long')
+            tkMessageBox.showerror(title='Error', message='The key for this algorithm is 8 bytes long')
             return
 
         print (key)
@@ -527,69 +528,36 @@ class TextMode(Frame):
         l = len(mess)
         print(l)
 
+        mess = str(self.txIn.get('1.0', END))
+
         # saveDir = self.etSaveDir.get()
         
-        self.progress["value"] = 0
-        self.bytes = 0
-        self.interval = 100
-        self.maxbytes = l
-        self.progress["maximum"] = self.maxbytes
-        
-        print("En/De-crypting")
-        p = threading.Thread(target=self.read_bytes, args=())
-        p.start()
+        # print("En/De-crypting")
+        # p = threading.Thread(target=self.read_bytes, args=())
+        # p.start()
         if self.cbEnDeCrypt.current() == 0:
-            self.lbStatus.config(text="Encrypting...")
+            # self.lbStatus.config(text="Encrypting...")
             # newFileName = saveDir + '/' + os.path.split(fileName)[1] + '.ldq'
-            if self.cbAlgorithm.current() == 0:
-                self.interval = 10000000
-                c = threading.Thread(target=cryptt.AESencrypt, args=(mess, key))
-            elif self.cbAlgorithm.current() == 1:
-                self.interval = 200000
-                c = threading.Thread(target=cryptt.DESencrypt, args=(key, mess))
-            else:
-                self.interval = 7800
-                c = threading.Thread(target= cryptf.encrypt_blob, args=(key, fileName, newFileName))
-            c.start()
+            alg = self.cbAlgorithm.current()
+            print(key)
+            print(mess)
+            out = cryptt.encrypt(mess, key, alg)
         else:
-            self.lbStatus.config(text="Decrypting...")
+            # self.lbStatus.config(text="Decrypting...")
             #newFileName = fileName.split('.')[0] + "_decrypted." + fileName.split('.')[1]
             # newFileName = saveDir + '/' + os.path.split(fileName)[1].split('.')[0] + fileName.split('.')[1]
-            if self.cbAlgorithm.current() == 0:
-                self.interval = 15000000
-                c = threading.Thread(target=cryptf.AES_decrypt_file, args=(key, fileName, newFileName))
-            elif self.cbAlgorithm.current() == 1:
-                self.interval = 100000
-                c = threading.Thread(target=cryptf.DES3_decrypt_file, args=(key, fileName, newFileName))
-            else:
-                self.interval = 300
-                c = threading.Thread(target=cryptf.decrypt_blob, args=(key, fileName, newFileName))
-            c.start()
+            alg = self.cbAlgorithm.current()
+            print("d" + key)
+            print(mess)
+            out = cryptt.decrypt(mess, key, alg)
         
-        c.join()
-        self.bytes = self.maxbytes
-        self.progress["value"] = self.progress["maximum"]
-        if self.cbEnDeCrypt.current():
-            self.lbStatus.config(text="Decrypted!")
-        else:
-            self.lbStatus.config(text="Encrypted!")
+        self.txOut.delete('1.0', END)
+        self.txOut.insert('1.0', out)
+        # if self.cbEnDeCrypt.current():
+        #     self.lbStatus.config(text="Decrypted!")
+        # else:
+        #     self.lbStatus.config(text="Encrypted!")
         print("Completed")
-
-    def read_bytes(self):
-        # print(".")
-        self.bytes += self.interval
-        self.progress["value"] = self.bytes
-        if (self.bytes < self.maxbytes):
-            self.after(100, self.read_bytes)
-
-    def timer(self):
-        self.timeExecute += 1
-        minute = self.timeExecute / 60
-        second = self.timeExecute % 60
-        timeDisplay = str(minute / 10) + str(minute % 10) + ":" + str(second / 10) + str(second % 10)
-        self.lbTime.config(text="Time: " + timeDisplay)
-        if (self.bytes < self.maxbytes):
-            self.after(1000, self.timer)
 
     def startThread(self):
         t = threading.Thread(target=self.fileStart, args=())
@@ -676,19 +644,19 @@ class TextMode(Frame):
         self.txOut.grid(row=4, column=2, columnspan=4, padx=5)
 
         #Progress bar
-        self.lbProgress = Label(self, text="Progress:", bg='black', fg='white')
-        self.lbProgress.grid(row=5, column=1, sticky=E)
+        # self.lbProgress = Label(self, text="Progress:", bg='black', fg='white')
+        # self.lbProgress.grid(row=5, column=1, sticky=E)
 
-        self.progress = ttk.Progressbar(self, orient="horizontal", length=100, mode="determinate")
-        self.progress.grid(row=5, column=2, sticky=W+E, padx=5, pady=5)
+        # self.progress = ttk.Progressbar(self, orient="horizontal", length=100, mode="determinate")
+        # self.progress.grid(row=5, column=2, sticky=W+E, padx=5, pady=5)
 
-        self.strVarStatus = StringVar()
-        self.lbStatus = Label(self, text="Idle", bg='black', fg='white')
-        self.lbStatus.grid(row=5, column=3, sticky=W)
+        # self.strVarStatus = StringVar()
+        # self.lbStatus = Label(self, text="Idle", bg='black', fg='white')
+        # self.lbStatus.grid(row=5, column=3, sticky=W)
 
-        self.strVarTime = StringVar()
-        self.lbTime = Label(self, text="Time: 00:00", bg='black', fg='white')
-        self.lbTime.grid(row=5, column=4, sticky=W)
+        # self.strVarTime = StringVar()
+        # self.lbTime = Label(self, text="Time: 00:00", bg='black', fg='white')
+        # self.lbTime.grid(row=5, column=4, sticky=W)
 
         #Hash tool
         # self.bthHashTool = Button(self, text="Hash Tool", width=10, command=lambda: self.hashTool())
@@ -737,7 +705,7 @@ imageFile = Image.open("bg.gif")
 imageBg = ImageTk.PhotoImage(imageFile)
 lbBg = Label(chatTab, image=imageBg)
 lbBg.grid(row=0, column=0)
-btStartChatApp = Button(chatTab, text='Start Chat App', command=lambda: startApp(root))
+btStartChatApp = Button(chatTab, text='Start Chat App', command=lambda: startApp())
 btStartChatApp.grid(row=0, column=0)
 
 #Run app and keep app alive

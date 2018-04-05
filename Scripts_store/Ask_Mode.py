@@ -20,7 +20,6 @@ Client Mode [Default]:
 Server Mode:
 		Here Your Machine will wait For Client Connection
 """
-
 def Ask_Mode_Option():
 	root=Tkinter.Tk(className=PROGRAM_NAME)
 	mode=Tkinter.IntVar()
@@ -47,8 +46,6 @@ def Ask_Mode_Option():
 	Label.config(state='disabled') 
 	root.mainloop()
 	return mode.get()
-		
-		
 # Trigger For Script
 if __name__=='__main__':
 	print(Ask_Mode_Option())
